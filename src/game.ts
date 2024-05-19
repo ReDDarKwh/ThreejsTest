@@ -9,6 +9,7 @@ import {
   PlaneGeometry,
   PointLight,
   PointLightHelper,
+  Vector3,
 } from "three";
 import { App } from "./engine/app";
 import { DragControls, FirstPersonControls, OrbitControls } from "three/examples/jsm/Addons";
@@ -18,14 +19,12 @@ import { systems, gameWorld } from "./ecs";
 
 export class Game extends App {
   animation = { enabled: true, play: true, speed: 1 };
-  cameraControls: FirstPersonControls;
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, systems);
 
-    const entity = gameWorld.add({});
+    const entity = gameWorld.add({playerController:true, velocity: new Vector3()});
 
-    gameWorld.addComponent(entity, "superCool", true);
 
     // ===== 💡 LIGHTS =====
     {
@@ -74,9 +73,7 @@ export class Game extends App {
 
     // ===== 🕹️ CONTROLS =====
     {
-      this.cameraControls = new FirstPersonControls(this.camera, this.canvas);
-      this.cameraControls.lookSpeed = 1;
-    
+      
       var dragControls = new DragControls(
         [cube],
         this.camera,
@@ -95,14 +92,14 @@ export class Game extends App {
       dragControls.addEventListener("dragstart", (event) => {
         const mesh = event.object as Mesh;
         const material = mesh.material as MeshStandardMaterial;
-        this.cameraControls.enabled = false;
+       
         this.animation.play = false;
         material.emissive.set("black");
         material.opacity = 0.7;
         material.needsUpdate = true;
       });
       dragControls.addEventListener("dragend", (event) => {
-        this.cameraControls.enabled = true;
+     
         this.animation.play = true;
         const mesh = event.object as Mesh;
         const material = mesh.material as MeshStandardMaterial;
@@ -193,9 +190,6 @@ export class Game extends App {
       helpersFolder.add(axesHelper, "visible").name("axes");
       helpersFolder.add(pointLightHelper, "visible").name("pointLight");
 
-      const cameraFolder = gui.addFolder("Camera");
-      cameraFolder.add(this.cameraControls, "autoRotate");
-
       // persist GUI state in local storage on changes
       gui.onFinishChange(() => {
         const guiState = gui.save();
@@ -218,6 +212,6 @@ export class Game extends App {
   }
 
   update(): void {
-    this.cameraControls.update(this.clock.getDelta());
+    
   }
 }

@@ -10,6 +10,9 @@ import {
 import { resizeRendererToDisplaySize } from "./helpers/responsiveness";
 import Stats from "three/examples/jsm/libs/stats.module";
 import { System, systems as internalSystems } from "./ecs";
+import { GameInputs } from "game-inputs";
+import Input from "./input";
+import { Octree } from "three/examples/jsm/Addons";
 
 export abstract class App {
   canvas: HTMLCanvasElement;
@@ -19,6 +22,10 @@ export abstract class App {
   stats: Stats;
   camera: PerspectiveCamera;
   systems: System[] = [];
+  inputs: GameInputs;
+  worldOctree = new Octree();
+
+  private _input: Input;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -40,6 +47,9 @@ export abstract class App {
     this.clock = new Clock();
     this.stats = new Stats();
 
+    this._input = new Input(this.canvas);
+    this.inputs = this._input.inputs;
+
     this.camera = new PerspectiveCamera(
       50,
       canvas.clientWidth / canvas.clientHeight,
@@ -47,6 +57,7 @@ export abstract class App {
       100
     );
     this.camera.position.set(2, 2, 5);
+    this.camera.rotation.order = 'YXZ';
 
     document.body.appendChild(this.stats.dom);
 
@@ -57,15 +68,17 @@ export abstract class App {
     }
   }
 
-  abstract update(): void;
+  abstract update(dt: number): void;
 
   private internalUpdate(): void {
     this.stats.update();
 
-    this.update();
+    const dt = this.clock.getDelta();
+
+    this.update(dt);
 
     for (const system of this.systems) {
-      system.update(this);
+      system.update(this, dt);
     }
 
     if (resizeRendererToDisplaySize(this.renderer)) {
@@ -73,6 +86,8 @@ export abstract class App {
       this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
       this.camera.updateProjectionMatrix();
     }
+
+    this._input.update();
 
     this.renderer.render(this.scene, this.camera);
   }

@@ -1,0 +1,11 @@
+{
+  "input": {
+    "mappings": {
+      "forward": ["ArrowUp", "KeyW"],
+      "left": ["ArrowLeft", "KeyA"],
+      "right": ["ArrowRight", "KeyD"],
+      "backward": ["ArrowDown", "KeyS"],
+      "click": ["Mouse1"]
+    }
+  }
+}

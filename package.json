@@ -9,11 +9,13 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/node": "^20.12.12",
     "@types/three": "^0.163.0",
     "typescript": "^5.4.5",
     "vite": "^5.2.11"
   },
   "dependencies": {
+    "game-inputs": "^0.8.0",
     "lil-gui": "^0.19.2",
     "miniplex": "^2.0.0",
     "three": "^0.164.1"

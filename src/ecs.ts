@@ -14,7 +14,7 @@ class One extends System {
 
   update(): void {
     for (const e of this.q.superCool) {
-      console.log(e);
+      //console.log(e);
     }
   }
 }
