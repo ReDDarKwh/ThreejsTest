@@ -1,8 +1,5 @@
-import { App } from "./engine/app";
-import { System } from "./engine/ecs/system";
-import { BaseEntity } from "./engine/ecs/entity";
-import { world } from "./engine/ecs/entity";
 import { World } from "miniplex";
+import { BaseEntity, System, world } from "./engine/ecs";
 
 type Entity = {
   superCool: true;
@@ -14,7 +11,7 @@ class One extends System {
   readonly q = {
     superCool: gameWorld.with("superCool"),
   };
-  
+
   update(): void {
     for (const e of this.q.superCool) {
       console.log(e);
@@ -22,4 +19,4 @@ class One extends System {
   }
 }
 
-export default [One];
+export const systems = [One];

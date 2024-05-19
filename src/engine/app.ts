@@ -4,24 +4,28 @@ import {
   PCFSoftShadowMap,
   PerspectiveCamera,
   Scene,
+  WebGLRenderer,
 } from "three";
-import WebGPURenderer from "three/examples/jsm/renderers/webgpu/WebGPURenderer";
+
 import { resizeRendererToDisplaySize } from "./helpers/responsiveness";
 import Stats from "three/examples/jsm/libs/stats.module";
-import { System } from "./ecs/system";
+import { System, systems as internalSystems } from "./ecs";
 
 export abstract class App {
   canvas: HTMLCanvasElement;
-  renderer: WebGPURenderer;
+  renderer: WebGLRenderer;
   scene: Scene;
   clock: Clock;
   stats: Stats;
   camera: PerspectiveCamera;
   systems: System[] = [];
 
-  constructor(canvas: HTMLCanvasElement, systems: { new (): System }[]) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    systems: { new (app: App): System }[]
+  ) {
     this.canvas = canvas;
-    this.renderer = new WebGPURenderer({
+    this.renderer = new WebGLRenderer({
       canvas,
       antialias: true,
       alpha: true,
@@ -46,8 +50,10 @@ export abstract class App {
 
     document.body.appendChild(this.stats.dom);
 
-    for (const system of systems) {
-      this.systems.push(new system());
+    for (const system of [...systems, ...internalSystems] as {
+      new (app: App): System;
+    }[]) {
+      this.systems.push(new system(this));
     }
   }
 

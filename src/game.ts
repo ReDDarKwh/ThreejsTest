@@ -14,7 +14,7 @@ import { App } from "./engine/app";
 import { DragControls, OrbitControls } from "three/examples/jsm/Addons";
 import { toggleFullScreen } from "./engine/helpers/fullscreen";
 import GUI from "lil-gui";
-import systems, { gameWorld } from "./ecs";
+import { systems, gameWorld } from "./ecs";
 
 export class Game extends App {
   animation = { enabled: true, play: true, speed: 1 };
@@ -38,10 +38,8 @@ export class Game extends App {
       pointLight.shadow.camera.far = 4000;
       pointLight.shadow.mapSize.width = 2048;
       pointLight.shadow.mapSize.height = 2048;
-      //pointLight.visible = false;
-      //ambientLight.visible = false;
-      this.scene.add(ambientLight);
-      this.scene.add(pointLight);
+      gameWorld.add({ node: ambientLight });
+      gameWorld.add({ node: pointLight });
     }
 
     // ===== 📦 OBJECTS =====
@@ -63,15 +61,15 @@ export class Game extends App {
         emissive: "teal",
         emissiveIntensity: 0.2,
         side: 2,
-        transparent: true,
+        transparent: false,
         opacity: 0.4,
       });
       const plane = new Mesh(planeGeometry, planeMaterial);
       plane.rotateX(Math.PI / 2);
       plane.receiveShadow = true;
 
-      this.scene.add(cube);
-      this.scene.add(plane);
+      gameWorld.add({ node: cube });
+      gameWorld.add({ node: plane });
     }
 
     // ===== 🕹️ CONTROLS =====
@@ -129,7 +127,7 @@ export class Game extends App {
     {
       var axesHelper = new AxesHelper(4);
       axesHelper.visible = false;
-      this.scene.add(axesHelper);
+      gameWorld.add({ node: axesHelper });
 
       var pointLightHelper = new PointLightHelper(
         pointLight,
@@ -137,11 +135,11 @@ export class Game extends App {
         "orange"
       );
       pointLightHelper.visible = false;
-      this.scene.add(pointLightHelper);
+      gameWorld.add({ node: pointLightHelper });
 
       const gridHelper = new GridHelper(20, 20, "teal", "darkgray");
       gridHelper.position.y = -0.01;
-      this.scene.add(gridHelper);
+      gameWorld.add({ node: gridHelper });
     }
 
     // ==== 🐞 DEBUG GUI ====
@@ -191,8 +189,8 @@ export class Game extends App {
       controlsFolder.add(dragControls, "enabled").name("drag controls");
 
       const lightsFolder = gui.addFolder("Lights");
-      lightsFolder.add(pointLight, "visible").name("point light");
-      lightsFolder.add(ambientLight, "visible").name("ambient light");
+      lightsFolder.add(pointLight, "intensity").name("point light");
+      lightsFolder.add(ambientLight, "intensity").name("ambient light");
 
       const helpersFolder = gui.addFolder("Helpers");
       helpersFolder.add(axesHelper, "visible").name("axes");

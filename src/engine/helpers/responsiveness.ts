@@ -1,6 +1,7 @@
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer'
+import { Renderer } from 'three'
 
-export function resizeRendererToDisplaySize(renderer: WebGPURenderer) {
+
+export function resizeRendererToDisplaySize(renderer: Renderer) {
   const canvas = renderer.domElement
   const width = canvas.clientWidth
   const height = canvas.clientHeight
