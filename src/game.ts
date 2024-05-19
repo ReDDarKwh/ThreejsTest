@@ -11,14 +11,14 @@ import {
   PointLightHelper,
 } from "three";
 import { App } from "./engine/app";
-import { DragControls, OrbitControls } from "three/examples/jsm/Addons";
+import { DragControls, FirstPersonControls, OrbitControls } from "three/examples/jsm/Addons";
 import { toggleFullScreen } from "./engine/helpers/fullscreen";
 import GUI from "lil-gui";
 import { systems, gameWorld } from "./ecs";
 
 export class Game extends App {
   animation = { enabled: true, play: true, speed: 1 };
-  cameraControls: OrbitControls;
+  cameraControls: FirstPersonControls;
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, systems);
@@ -74,12 +74,9 @@ export class Game extends App {
 
     // ===== 🕹️ CONTROLS =====
     {
-      this.cameraControls = new OrbitControls(this.camera, this.canvas);
-      this.cameraControls.target = cube.position.clone();
-      this.cameraControls.enableDamping = true;
-      this.cameraControls.autoRotate = false;
-      this.cameraControls.update();
-
+      this.cameraControls = new FirstPersonControls(this.camera, this.canvas);
+      this.cameraControls.lookSpeed = 1;
+    
       var dragControls = new DragControls(
         [cube],
         this.camera,
@@ -221,6 +218,6 @@ export class Game extends App {
   }
 
   update(): void {
-    this.cameraControls.update();
+    this.cameraControls.update(this.clock.getDelta());
   }
 }
