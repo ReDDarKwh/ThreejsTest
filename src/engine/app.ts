@@ -13,6 +13,12 @@ import { System, systems as internalSystems } from "./ecs";
 import { GameInputs } from "game-inputs";
 import Input from "./input";
 import { Octree } from "three/examples/jsm/Addons";
+import initJolt from "jolt-physics";
+import joltWasmUrl from "jolt-physics/jolt-physics.wasm.wasm?url";
+
+const Jolt = await initJolt({
+  locateFile: () => joltWasmUrl,
+});
 
 export abstract class App {
   canvas: HTMLCanvasElement;
@@ -26,6 +32,10 @@ export abstract class App {
   worldOctree = new Octree();
 
   private _input: Input;
+  
+  jolt!: initJolt.JoltInterface;
+  physicsSystem!: initJolt.PhysicsSystem;
+  bodyInterface!: initJolt.BodyInterface;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -57,7 +67,7 @@ export abstract class App {
       100
     );
     this.camera.position.set(2, 2, 5);
-    this.camera.rotation.order = 'YXZ';
+    this.camera.rotation.order = "YXZ";
 
     document.body.appendChild(this.stats.dom);
 
@@ -66,14 +76,14 @@ export abstract class App {
     }[]) {
       this.systems.push(new system(this));
     }
+
+    this.initPhysics();
   }
 
   abstract update(dt: number): void;
 
   private internalUpdate(): void {
-    this.stats.update();
-
-    const dt = this.clock.getDelta();
+    const dt = Math.min(this.clock.getDelta(), 0.033);
 
     this.update(dt);
 
@@ -81,14 +91,65 @@ export abstract class App {
       system.update(this, dt);
     }
 
+    this.updatePhysics(dt);
+
+    this._input.update();
+    this.renderer.render(this.scene, this.camera);
+
     if (resizeRendererToDisplaySize(this.renderer)) {
       const canvas = this.renderer.domElement;
       this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
       this.camera.updateProjectionMatrix();
     }
 
-    this._input.update();
+    this.stats.update();
+  }
 
-    this.renderer.render(this.scene, this.camera);
+  initPhysics() {
+    // Initialize Jolt
+    const settings = new Jolt.JoltSettings();
+    this.setupCollisionFiltering(settings);
+    this.jolt = new Jolt.JoltInterface(settings);
+    Jolt.destroy(settings);
+    this.physicsSystem = this.jolt.GetPhysicsSystem();
+    this.bodyInterface = this.physicsSystem.GetBodyInterface();
+  }
+
+  setupCollisionFiltering (settings: initJolt.JoltSettings) {
+    
+    // Object layers
+    const LAYER_NON_MOVING = 0;
+    const LAYER_MOVING = 1;
+    const NUM_OBJECT_LAYERS = 2;
+    
+    // Layer that objects can be in, determines which other objects it can collide with
+    // Typically you at least want to have 1 layer for moving bodies and 1 layer for static bodies, but you can have more
+    // layers if you want. E.g. you could have a layer for high detail collision (which is not used by the physics simulation
+    // but only if you do collision testing).
+    let objectFilter = new Jolt.ObjectLayerPairFilterTable(NUM_OBJECT_LAYERS);
+    objectFilter.EnableCollision(LAYER_NON_MOVING, LAYER_MOVING);
+    objectFilter.EnableCollision(LAYER_MOVING, LAYER_MOVING);
+  
+    // Each broadphase layer results in a separate bounding volume tree in the broad phase. You at least want to have
+    // a layer for non-moving and moving objects to avoid having to update a tree full of static objects every frame.
+    // You can have a 1-on-1 mapping between object layers and broadphase layers (like in this case) but if you have
+    // many object layers you'll be creating many broad phase trees, which is not efficient.
+    const BP_LAYER_NON_MOVING = new Jolt.BroadPhaseLayer(0);
+    const BP_LAYER_MOVING = new Jolt.BroadPhaseLayer(1);
+    const NUM_BROAD_PHASE_LAYERS = 2;
+    let bpInterface = new Jolt.BroadPhaseLayerInterfaceTable(NUM_OBJECT_LAYERS, NUM_BROAD_PHASE_LAYERS);
+    bpInterface.MapObjectToBroadPhaseLayer(LAYER_NON_MOVING, BP_LAYER_NON_MOVING);
+    bpInterface.MapObjectToBroadPhaseLayer(LAYER_MOVING, BP_LAYER_MOVING);
+  
+    settings.mObjectLayerPairFilter = objectFilter;
+    settings.mBroadPhaseLayerInterface = bpInterface;
+    settings.mObjectVsBroadPhaseLayerFilter = new Jolt.ObjectVsBroadPhaseLayerFilterTable(settings.mBroadPhaseLayerInterface, NUM_BROAD_PHASE_LAYERS, settings.mObjectLayerPairFilter, NUM_OBJECT_LAYERS);
+  };
+
+  updatePhysics(dt: number) {
+    // When running below 55 Hz, do 2 steps instead of 1
+    var numSteps = dt > 1.0 / 0.01818 ? 2 : 1;
+    // Step the physics world
+    this.jolt.Step(dt, numSteps);
   }
 }

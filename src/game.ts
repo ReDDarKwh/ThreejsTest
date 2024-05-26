@@ -23,8 +23,7 @@ export class Game extends App {
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, systems);
 
-    const entity = gameWorld.add({playerController:true, velocity: new Vector3()});
-
+    gameWorld.add({playerController:true, velocity: new Vector3()});
 
     // ===== 💡 LIGHTS =====
     {

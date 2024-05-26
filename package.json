@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "game-inputs": "^0.8.0",
+    "jolt-physics": "^0.23.0",
     "lil-gui": "^0.19.2",
     "miniplex": "^2.0.0",
     "three": "^0.164.1"
