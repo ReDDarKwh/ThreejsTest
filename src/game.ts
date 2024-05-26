@@ -11,8 +11,12 @@ import {
   PointLightHelper,
   Vector3,
 } from "three";
-import { App } from "./engine/app";
-import { DragControls, FirstPersonControls, OrbitControls } from "three/examples/jsm/Addons";
+import { App, Jolt, LAYER_MOVING, LAYER_NON_MOVING } from "./engine/app";
+import {
+  DragControls,
+  FirstPersonControls,
+  OrbitControls,
+} from "three/examples/jsm/Addons";
 import { toggleFullScreen } from "./engine/helpers/fullscreen";
 import GUI from "lil-gui";
 import { systems, gameWorld } from "./ecs";
@@ -23,7 +27,18 @@ export class Game extends App {
   constructor(canvas: HTMLCanvasElement) {
     super(canvas, systems);
 
-    gameWorld.add({playerController:true, velocity: new Vector3()});
+    gameWorld.add({
+      characterController: {
+        height: 3,
+        radius: 1,
+        maxSlopeAngle: 45 * (Math.PI / 180.0),
+        maxStrength: 100,
+        characterPadding: 0.02,
+        penetrationRecoverySpeed: 1,
+        predictiveContactDistance: 0.1,
+      },
+      velocity: new Vector3(),
+    });
 
     // ===== 💡 LIGHTS =====
     {
@@ -51,9 +66,12 @@ export class Game extends App {
       });
       var cube = new Mesh(cubeGeometry, cubeMaterial);
       cube.castShadow = true;
-      cube.position.y = 0.5;
 
-      const planeGeometry = new PlaneGeometry(3, 3);
+      const planeGeometry = new BoxGeometry(10, 0.5, 10);
+      let planeSize = new Vector3();
+      planeGeometry.computeBoundingBox();
+      planeGeometry.boundingBox?.getSize(planeSize);
+
       const planeMaterial = new MeshLambertMaterial({
         color: "gray",
         emissive: "teal",
@@ -63,16 +81,37 @@ export class Game extends App {
         opacity: 0.4,
       });
       const plane = new Mesh(planeGeometry, planeMaterial);
-      plane.rotateX(Math.PI / 2);
       plane.receiveShadow = true;
 
-      gameWorld.add({ node: cube });
-      gameWorld.add({ node: plane });
+      gameWorld.add({
+        node: cube,
+        physics: {
+          body: this.createBox(
+            new Jolt.Vec3(0, 5, 0),
+            Jolt.Quat.prototype.sIdentity(),
+            new Jolt.Vec3(sideLength / 2, sideLength / 2, sideLength / 2),
+            Jolt.EMotionType_Dynamic,
+            LAYER_MOVING
+          ),
+        },
+      });
+
+      gameWorld.add({
+        node: plane,
+        physics: {
+          body: this.createBox(
+            new Jolt.Vec3(0, 0, 0),
+            Jolt.Quat.prototype.sIdentity(),
+            new Jolt.Vec3(planeSize.x / 2, planeSize.y / 2, planeSize.z / 2),
+            Jolt.EMotionType_Static,
+            LAYER_NON_MOVING
+          ),
+        },
+      });
     }
 
     // ===== 🕹️ CONTROLS =====
     {
-      
       var dragControls = new DragControls(
         [cube],
         this.camera,
@@ -91,14 +130,13 @@ export class Game extends App {
       dragControls.addEventListener("dragstart", (event) => {
         const mesh = event.object as Mesh;
         const material = mesh.material as MeshStandardMaterial;
-       
+
         this.animation.play = false;
         material.emissive.set("black");
         material.opacity = 0.7;
         material.needsUpdate = true;
       });
       dragControls.addEventListener("dragend", (event) => {
-     
         this.animation.play = true;
         const mesh = event.object as Mesh;
         const material = mesh.material as MeshStandardMaterial;
@@ -210,7 +248,5 @@ export class Game extends App {
     }
   }
 
-  update(): void {
-    
-  }
+  update(): void {}
 }
