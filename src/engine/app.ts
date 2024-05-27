@@ -90,7 +90,6 @@ export abstract class App {
 
   private internalUpdate(): void {
     const dt = Math.min(this.clock.getDelta(), 0.033);
-
     this.update(dt);
 
     for (const system of this.systems) {
@@ -98,7 +97,6 @@ export abstract class App {
     }
 
     this.updatePhysics(dt);
-
     this._input.update();
     this.renderer.render(this.scene, this.camera);
 
@@ -119,12 +117,11 @@ export abstract class App {
     Jolt.destroy(settings);
     this.physicsSystem = this.jolt.GetPhysicsSystem();
     this.bodyInterface = this.physicsSystem.GetBodyInterface();
-    this.physicsSystem.SetGravity(new Jolt.Vec3(0, -25, 0))
+    this.physicsSystem.SetGravity(new Jolt.Vec3(0, -25, 0));
   }
 
   setupCollisionFiltering(settings: initJolt.JoltSettings) {
     // Object layers
-    
 
     // Layer that objects can be in, determines which other objects it can collide with
     // Typically you at least want to have 1 layer for moving bodies and 1 layer for static bodies, but you can have more
