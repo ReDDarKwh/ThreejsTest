@@ -1,7 +1,8 @@
 import { GameInputs } from "game-inputs";
 import { CONFIG } from "./config/config";
+import { Vector3 } from "three";
 
-export default class Input {
+export default class Control {
   inputs: GameInputs;
 
   constructor(domElement: HTMLElement) {
@@ -17,6 +18,12 @@ export default class Input {
         this.inputs.bind(action, key);
       }
     }
+  }
+
+  getDirection() {
+    const forward = Number(this.inputs.state["forward"]) * 1 + Number(this.inputs.state["backward"]) * -1;
+		const right = Number(this.inputs.state["right"]) * 1 + Number(this.inputs.state["left"]) * -1;
+		return new Vector3(right, 0, -forward)
   }
 
   update() {

@@ -1,5 +1,6 @@
 import { World } from "miniplex";
-import { BaseEntity, System, world } from "./engine/ecs";
+import { System } from "./engine/ecs/systems/system";
+import { BaseEntity, world } from "./engine/ecs/entity";
 
 type Entity = {
   superCool: true;

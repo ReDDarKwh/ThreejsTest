@@ -11,9 +11,9 @@ import {
 
 import { resizeRendererToDisplaySize } from "./helpers/responsiveness";
 import Stats from "three/examples/jsm/libs/stats.module";
-import { System, systems as internalSystems } from "./ecs";
-import { GameInputs } from "game-inputs";
-import Input from "./input";
+import { System, systems as internalSystems } from "./ecs/systems/system";
+
+import Control from "./control";
 import { Octree } from "three/examples/jsm/Addons";
 import initJolt from "jolt-physics";
 import joltWasmUrl from "jolt-physics/jolt-physics.wasm.wasm?url";
@@ -34,10 +34,8 @@ export abstract class App {
   stats: Stats;
   camera: PerspectiveCamera;
   systems: System[] = [];
-  inputs: GameInputs;
   worldOctree = new Octree();
-
-  private _input: Input;
+  control: Control;
 
   jolt!: initJolt.JoltInterface;
   physicsSystem!: initJolt.PhysicsSystem;
@@ -63,8 +61,7 @@ export abstract class App {
     this.clock = new Clock();
     this.stats = new Stats();
 
-    this._input = new Input(this.canvas);
-    this.inputs = this._input.inputs;
+    this.control = new Control(this.canvas);
 
     this.camera = new PerspectiveCamera(
       50,
@@ -97,7 +94,7 @@ export abstract class App {
     }
 
     this.updatePhysics(dt);
-    this._input.update();
+    this.control.update();
     this.renderer.render(this.scene, this.camera);
 
     if (resizeRendererToDisplaySize(this.renderer)) {
@@ -181,6 +178,12 @@ export abstract class App {
       motionType,
       layer
     );
+
+    creationSettings.mFriction = 0.1;
+    creationSettings.mOverrideMassProperties =
+      Jolt.EOverrideMassProperties_CalculateInertia;
+    creationSettings.mMassPropertiesOverride.mMass = 1;
+
     let body = this.bodyInterface.CreateBody(creationSettings);
     Jolt.destroy(creationSettings);
     return body;

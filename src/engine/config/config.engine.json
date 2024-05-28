@@ -5,6 +5,7 @@
       "left": ["ArrowLeft", "KeyA"],
       "backward": ["ArrowDown", "KeyS"],
       "right": ["ArrowRight", "KeyD"],
+      "jump": ["Space"],
       "click": ["Mouse1"]
     }
   }

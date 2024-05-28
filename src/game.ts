@@ -6,20 +6,16 @@ import {
   Mesh,
   MeshLambertMaterial,
   MeshStandardMaterial,
-  PlaneGeometry,
   PointLight,
   PointLightHelper,
   Vector3,
 } from "three";
 import { App, Jolt, LAYER_MOVING, LAYER_NON_MOVING } from "./engine/app";
-import {
-  DragControls,
-  FirstPersonControls,
-  OrbitControls,
-} from "three/examples/jsm/Addons";
+import { DragControls } from "three/examples/jsm/Addons";
 import { toggleFullScreen } from "./engine/helpers/fullscreen";
 import GUI from "lil-gui";
 import { systems, gameWorld } from "./ecs";
+import { CharacterControllerComponent } from "./engine/ecs/components/characterControllerComponent";
 
 export class Game extends App {
   animation = { enabled: true, play: true, speed: 1 };
@@ -28,16 +24,7 @@ export class Game extends App {
     super(canvas, systems);
 
     gameWorld.add({
-      characterController: {
-        height: 3,
-        radius: 1,
-        maxSlopeAngle: 45 * (Math.PI / 180.0),
-        maxStrength: 100,
-        characterPadding: 0.02,
-        penetrationRecoverySpeed: 1,
-        predictiveContactDistance: 0.1,
-      },
-      velocity: new Vector3(),
+      characterController: new CharacterControllerComponent(this, 3),
     });
 
     // ===== 💡 LIGHTS =====
@@ -57,7 +44,7 @@ export class Game extends App {
 
     // ===== 📦 OBJECTS =====
     {
-      const sideLength = 1;
+      const sideLength = 0.05;
       const cubeGeometry = new BoxGeometry(sideLength, sideLength, sideLength);
       const cubeMaterial = new MeshStandardMaterial({
         color: "#f69f1f",
@@ -65,11 +52,10 @@ export class Game extends App {
         roughness: 0.7,
       });
       var cube = new Mesh(cubeGeometry, cubeMaterial);
-      cube.castShadow = true;
 
-      const planeGeometry = new BoxGeometry(10, 0.5, 10);
+      const planeGeometry = new BoxGeometry(30, 0.5, 30);
       let planeSize = new Vector3();
-      planeGeometry.computeBoundingBox();
+      planeGeometry.computeBoundingBox(); 
       planeGeometry.boundingBox?.getSize(planeSize);
 
       const planeMaterial = new MeshLambertMaterial({
@@ -84,7 +70,7 @@ export class Game extends App {
       plane.receiveShadow = true;
 
       gameWorld.add({
-        node: cube,
+        node: new Mesh(cubeGeometry, cubeMaterial),
         physics: {
           body: this.createBox(
             new Jolt.Vec3(0, 5, 0),
@@ -97,10 +83,51 @@ export class Game extends App {
       });
 
       gameWorld.add({
-        node: plane,
+        node: new Mesh(cubeGeometry, cubeMaterial),
+        physics: {
+          body: this.createBox(
+            new Jolt.Vec3(0, 6.5, 0),
+            Jolt.Quat.prototype.sIdentity(),
+            new Jolt.Vec3(sideLength / 2, sideLength / 2, sideLength / 2),
+            Jolt.EMotionType_Dynamic,
+            LAYER_MOVING
+          ),
+        },
+      });
+
+      setInterval(() => {
+        gameWorld.add({
+          node: new Mesh(cubeGeometry, cubeMaterial),
+          physics: {
+            body: this.createBox(
+              new Jolt.Vec3(0, 1, 0),
+              Jolt.Quat.prototype.sIdentity(),
+              new Jolt.Vec3(sideLength / 2, sideLength / 2, sideLength / 2),
+              Jolt.EMotionType_Dynamic,
+              LAYER_MOVING
+            ),
+          },
+        });
+      }, 20);
+
+      gameWorld.add({
+        node: new Mesh(planeGeometry, planeMaterial),
         physics: {
           body: this.createBox(
             new Jolt.Vec3(0, 0, 0),
+            Jolt.Quat.prototype.sIdentity(),
+            new Jolt.Vec3(planeSize.x / 2, planeSize.y / 2, planeSize.z / 2),
+            Jolt.EMotionType_Static,
+            LAYER_NON_MOVING
+          ),
+        },
+      });
+
+      gameWorld.add({
+        node: new Mesh(planeGeometry, planeMaterial),
+        physics: {
+          body: this.createBox(
+            new Jolt.Vec3(planeSize.x, 0.3, 0),
             Jolt.Quat.prototype.sIdentity(),
             new Jolt.Vec3(planeSize.x / 2, planeSize.y / 2, planeSize.z / 2),
             Jolt.EMotionType_Static,
