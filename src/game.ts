@@ -44,7 +44,7 @@ export class Game extends App {
 
     // ===== 📦 OBJECTS =====
     {
-      const sideLength = 0.05;
+      const sideLength = 1;
       const cubeGeometry = new BoxGeometry(sideLength, sideLength, sideLength);
       const cubeMaterial = new MeshStandardMaterial({
         color: "#f69f1f",
@@ -94,21 +94,6 @@ export class Game extends App {
           ),
         },
       });
-
-      setInterval(() => {
-        gameWorld.add({
-          node: new Mesh(cubeGeometry, cubeMaterial),
-          physics: {
-            body: this.createBox(
-              new Jolt.Vec3(0, 1, 0),
-              Jolt.Quat.prototype.sIdentity(),
-              new Jolt.Vec3(sideLength / 2, sideLength / 2, sideLength / 2),
-              Jolt.EMotionType_Dynamic,
-              LAYER_MOVING
-            ),
-          },
-        });
-      }, 20);
 
       gameWorld.add({
         node: new Mesh(planeGeometry, planeMaterial),
