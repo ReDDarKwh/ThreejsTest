@@ -8,14 +8,15 @@ import {
   MeshStandardMaterial,
   PointLight,
   PointLightHelper,
+  Quaternion,
   Vector3,
 } from "three";
-import { App, Jolt, LAYER_MOVING, LAYER_NON_MOVING } from "./engine/app";
-import { DragControls } from "three/examples/jsm/Addons";
+import { App } from "./engine/app";
 import { toggleFullScreen } from "./engine/helpers/fullscreen";
 import GUI from "lil-gui";
 import { systems, gameWorld } from "./ecs";
 import { CharacterControllerComponent } from "./engine/ecs/components/characterControllerComponent";
+import { Jolt, LAYER_MOVING, LAYER_NON_MOVING } from "./engine/physics";
 
 export class Game extends App {
   animation = { enabled: true, play: true, speed: 1 };
@@ -55,7 +56,7 @@ export class Game extends App {
 
       const planeGeometry = new BoxGeometry(30, 0.5, 30);
       let planeSize = new Vector3();
-      planeGeometry.computeBoundingBox(); 
+      planeGeometry.computeBoundingBox();
       planeGeometry.boundingBox?.getSize(planeSize);
 
       const planeMaterial = new MeshLambertMaterial({
@@ -72,10 +73,10 @@ export class Game extends App {
       gameWorld.add({
         node: new Mesh(cubeGeometry, cubeMaterial),
         physics: {
-          body: this.createBox(
-            new Jolt.Vec3(0, 5, 0),
-            Jolt.Quat.prototype.sIdentity(),
-            new Jolt.Vec3(sideLength / 2, sideLength / 2, sideLength / 2),
+          body: this.physics.createBox(
+            new Vector3(0, 5, 0),
+            Quaternion.prototype.identity(),
+            new Vector3(sideLength / 2, sideLength / 2, sideLength / 2),
             Jolt.EMotionType_Dynamic,
             LAYER_MOVING
           ),
@@ -85,10 +86,10 @@ export class Game extends App {
       gameWorld.add({
         node: new Mesh(cubeGeometry, cubeMaterial),
         physics: {
-          body: this.createBox(
-            new Jolt.Vec3(0, 6.5, 0),
-            Jolt.Quat.prototype.sIdentity(),
-            new Jolt.Vec3(sideLength / 2, sideLength / 2, sideLength / 2),
+          body: this.physics.createBox(
+            new Vector3(0, 6.5, 0),
+            Quaternion.prototype.identity(),
+            new Vector3(sideLength / 2, sideLength / 2, sideLength / 2),
             Jolt.EMotionType_Dynamic,
             LAYER_MOVING
           ),
@@ -98,10 +99,10 @@ export class Game extends App {
       gameWorld.add({
         node: new Mesh(planeGeometry, planeMaterial),
         physics: {
-          body: this.createBox(
-            new Jolt.Vec3(0, 0, 0),
-            Jolt.Quat.prototype.sIdentity(),
-            new Jolt.Vec3(planeSize.x / 2, planeSize.y / 2, planeSize.z / 2),
+          body: this.physics.createBox(
+            new Vector3(0, 0, 0),
+            Quaternion.prototype.identity(),
+            new Vector3(planeSize.x / 2, planeSize.y / 2, planeSize.z / 2),
             Jolt.EMotionType_Static,
             LAYER_NON_MOVING
           ),
@@ -111,10 +112,10 @@ export class Game extends App {
       gameWorld.add({
         node: new Mesh(planeGeometry, planeMaterial),
         physics: {
-          body: this.createBox(
-            new Jolt.Vec3(planeSize.x, 0.3, 0),
-            Jolt.Quat.prototype.sIdentity(),
-            new Jolt.Vec3(planeSize.x / 2, planeSize.y / 2, planeSize.z / 2),
+          body: this.physics.createBox(
+            new Vector3(planeSize.x, 0.3, 0),
+            Quaternion.prototype.identity(),
+            new Vector3(planeSize.x / 2, planeSize.y / 2, planeSize.z / 2),
             Jolt.EMotionType_Static,
             LAYER_NON_MOVING
           ),
@@ -124,46 +125,8 @@ export class Game extends App {
 
     // ===== 🕹️ CONTROLS =====
     {
-      var dragControls = new DragControls(
-        [cube],
-        this.camera,
-        this.renderer.domElement
-      );
-      dragControls.addEventListener("hoveron", (event) => {
-        const mesh = event.object as Mesh;
-        const material = mesh.material as MeshStandardMaterial;
-        material.emissive.set("orange");
-      });
-      dragControls.addEventListener("hoveroff", (event) => {
-        const mesh = event.object as Mesh;
-        const material = mesh.material as MeshStandardMaterial;
-        material.emissive.set("black");
-      });
-      dragControls.addEventListener("dragstart", (event) => {
-        const mesh = event.object as Mesh;
-        const material = mesh.material as MeshStandardMaterial;
-
-        this.animation.play = false;
-        material.emissive.set("black");
-        material.opacity = 0.7;
-        material.needsUpdate = true;
-      });
-      dragControls.addEventListener("dragend", (event) => {
-        this.animation.play = true;
-        const mesh = event.object as Mesh;
-        const material = mesh.material as MeshStandardMaterial;
-        material.emissive.set("black");
-        material.opacity = 1;
-        material.needsUpdate = true;
-      });
-      dragControls.enabled = false;
-
       // Full screen
-      window.addEventListener("dblclick", (event) => {
-        if (event.target === this.canvas) {
-          toggleFullScreen(this.canvas);
-        }
-      });
+     
     }
 
     // ===== 🪄 HELPERS =====
@@ -227,9 +190,6 @@ export class Game extends App {
 
       cubeOneFolder.add(this.animation, "enabled").name("animated");
       cubeOneFolder.add(this.animation, "speed", 0, 100).name("speeeeed");
-
-      const controlsFolder = gui.addFolder("Controls");
-      controlsFolder.add(dragControls, "enabled").name("drag controls");
 
       const lightsFolder = gui.addFolder("Lights");
       lightsFolder.add(pointLight, "intensity").name("point light");

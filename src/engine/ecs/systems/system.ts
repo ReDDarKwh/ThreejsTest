@@ -1,6 +1,7 @@
 import { Vector3 } from "three";
-import { App, Jolt } from "../../app";
+import { App } from "../../app";
 import { world } from "../entity";
+import { Jolt, Physics } from "../../physics";
 
 export abstract class System {
   /**
@@ -40,7 +41,7 @@ export const systems = [
       super(app);
 
       this.q.e.onEntityAdded.subscribe((x) => {
-        app.control.inputs.down.on("click", () => {
+        app.controls.inputs.down.on("click", () => {
           app.canvas.requestPointerLock();
         });
       });
@@ -51,8 +52,8 @@ export const systems = [
         const cc = characterController;
 
         if (document.pointerLockElement === app.canvas) {
-          app.camera.rotation.y -= app.control.inputs.pointerState.dx / 500;
-          app.camera.rotation.x -= app.control.inputs.pointerState.dy / 500;
+          app.camera.rotation.y -= app.controls.inputs.pointerState.dx / 500;
+          app.camera.rotation.x -= app.controls.inputs.pointerState.dy / 500;
 
           app.camera.rotation.x = Math.max(
             Math.min(app.camera.rotation.x, Math.PI / 2),
@@ -63,7 +64,7 @@ export const systems = [
         if (cc.character) {
           const character = cc.character;
           app.camera.getWorldQuaternion(cc.cameraRotation);
-          const movementDirection = app.control
+          const movementDirection = app.controls
             .getDirection()
             .applyQuaternion(cc.cameraRotation);
           movementDirection.y = 0;
@@ -74,7 +75,7 @@ export const systems = [
           );
           character.SetUp(characterUpRotation.RotateAxisY());
           character.SetRotation(characterUpRotation);
-          const upRotation = app.wrapQuat(characterUpRotation);
+          const upRotation = Physics.wrapQuat(characterUpRotation);
 
           if (cc.enableCharacterInertia) {
             cc.desiredVelocity
@@ -87,13 +88,19 @@ export const systems = [
           }
 
           character.UpdateGroundVelocity();
-          const characterUp = app.wrapVec3(character.GetUp());
-          const linearVelocity = app.wrapVec3(character.GetLinearVelocity());
+          const characterUp = Physics.wrapVec3(character.GetUp());
+          const linearVelocity = Physics.wrapVec3(
+            character.GetLinearVelocity()
+          );
           const currentVerticalVelocity = characterUp
             .clone()
             .multiplyScalar(linearVelocity.dot(characterUp));
-          const groundVelocity = app.wrapVec3(character.GetGroundVelocity());
-          const gravity = app.wrapVec3(app.physicsSystem.GetGravity());
+          const groundVelocity = Physics.wrapVec3(
+            character.GetGroundVelocity()
+          );
+          const gravity = Physics.wrapVec3(
+            app.physics.physicsSystem.GetGravity()
+          );
 
           let newVelocity: Vector3;
           const movingTowardsGround =
@@ -109,7 +116,7 @@ export const systems = [
             newVelocity = groundVelocity;
 
             // Jump
-            if (app.control.inputs.state["jump"] && movingTowardsGround)
+            if (app.controls.inputs.state["jump"] && movingTowardsGround)
               newVelocity.add(characterUp.multiplyScalar(cc.jumpSpeed));
           } else newVelocity = currentVerticalVelocity.clone();
 
@@ -124,9 +131,9 @@ export const systems = [
           );
 
           app.camera.position.copy(
-            app
-              .wrapVec3(character.GetPosition())
-              .add(new Vector3(0, cc.height, 0))
+            Physics.wrapVec3(character.GetPosition()).add(
+              new Vector3(0, cc.height, 0)
+            )
           );
 
           character.ExtendedUpdate(
@@ -137,7 +144,7 @@ export const systems = [
             cc.movingLayerFilter!,
             cc.bodyFilter!,
             cc.shapeFilter!,
-            app.jolt.GetTempAllocator()
+            app.physics.jolt.GetTempAllocator()
           );
         }
       }
@@ -153,21 +160,23 @@ export const systems = [
       super(app);
 
       this.q.physicsObjects.onEntityAdded.subscribe((x) => {
-        app.bodyInterface.AddBody(
+        app.physics.bodyInterface.AddBody(
           x.physics.body.GetID(),
           Jolt.EActivation_Activate
         );
       });
 
       this.q.physicsObjects.onEntityRemoved.subscribe((x) => {
-        app.bodyInterface.RemoveBody(x.physics.body.GetID());
+        app.physics.bodyInterface.RemoveBody(x.physics.body.GetID());
       });
     }
 
-    update(app: App, dt: number): void {
+    update(_app: App, _dt: number): void {
       for (const po of this.q.physicsObjects) {
-        po.node.position.copy(app.wrapVec3(po.physics.body.GetPosition()));
-        po.node.quaternion.copy(app.wrapQuat(po.physics.body.GetRotation()));
+        po.node.position.copy(Physics.wrapVec3(po.physics.body.GetPosition()));
+        po.node.quaternion.copy(
+          Physics.wrapQuat(po.physics.body.GetRotation())
+        );
       }
     }
   },

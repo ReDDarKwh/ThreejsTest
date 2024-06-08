@@ -2,7 +2,7 @@ import { GameInputs } from "game-inputs";
 import { CONFIG } from "./config/config";
 import { Vector3 } from "three";
 
-export default class Control {
+export default class Controls {
   inputs: GameInputs;
 
   constructor(domElement: HTMLElement) {

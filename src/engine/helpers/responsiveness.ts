@@ -1,6 +1,5 @@
 import { Renderer } from 'three'
 
-
 export function resizeRendererToDisplaySize(renderer: Renderer) {
   const canvas = renderer.domElement
   const width = canvas.clientWidth

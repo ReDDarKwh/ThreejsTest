@@ -1,5 +1,7 @@
 {
   "input": {
-    "mappings": {}
+    "mappings": {
+      "fire": ["Mouse1"]
+    }
   }
 }

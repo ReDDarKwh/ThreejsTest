@@ -1,6 +1,7 @@
 import { Quaternion, Vector3 } from "three";
-import { App, Jolt, LAYER_MOVING } from "../../app";
+import { App } from "../../app";
 import initJolt from "jolt-physics";
+import { Jolt, LAYER_MOVING } from "../../physics";
 
 
 export class CharacterControllerComponent {
@@ -60,11 +61,11 @@ export class CharacterControllerComponent {
       settings,
       new Jolt.RVec3(2, 5, 2),
       Jolt.Quat.prototype.sIdentity(),
-      app.physicsSystem
+      app.physics.physicsSystem
     );
 
-    const objectVsBroadPhaseLayerFilter = app.jolt.GetObjectVsBroadPhaseLayerFilter();
-    const objectLayerPairFilter = app.jolt.GetObjectLayerPairFilter();
+    const objectVsBroadPhaseLayerFilter = app.physics.jolt.GetObjectVsBroadPhaseLayerFilter();
+    const objectLayerPairFilter = app.physics.jolt.GetObjectLayerPairFilter();
 
     this.updateSettings = new Jolt.ExtendedUpdateSettings();
     this.movingBPFilter = new Jolt.DefaultBroadPhaseLayerFilter(
