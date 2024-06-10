@@ -2,7 +2,7 @@ import { World } from "miniplex";
 import { System } from "./engine/ecs/systems/system";
 import { BaseEntity, world } from "./engine/ecs/entity";
 import { App } from "./engine/app";
-import { Physics } from "./engine/physics";
+import { Jolt, Physics } from "./engine/physics";
 import { Color, Vector3 } from "three";
 import { createLine } from "./engine/helpers/debug";
 
@@ -35,12 +35,22 @@ class ShooterCharacterSystem extends System {
 
         app.scene.add(line);
 
-        console.log(forward)
+        console.log(forward);
 
-        app.physics.castRay(
+        const body = app.physics.castRay(
           app.camera.position,
           forward.normalize().multiplyScalar(100)
         );
+
+        if (body) {
+          app.physics.bodyInterface.AddImpulse(
+            body.GetID(),
+            new Jolt.Vec3(0, 10, 0)
+          );
+
+          let constraintSettings = new Jolt.PointConstraintSettings();
+					
+        }
       });
     });
   }

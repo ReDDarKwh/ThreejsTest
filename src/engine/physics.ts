@@ -22,7 +22,8 @@ export class Physics {
   rayBodyFilter: initJolt.BodyFilter;
   rayObjectFilter: initJolt.DefaultObjectLayerFilter;
   rayBpFilter: initJolt.DefaultBroadPhaseLayerFilter;
-  rayHitBody?: initJolt.Body;
+  rayHitBody?: number;
+  rayResolve?: (value: initJolt.Body | PromiseLike<initJolt.Body>) => void;
 
   constructor() {
     // Initialize Jolt
@@ -56,10 +57,15 @@ export class Physics {
         Jolt.RayCastResult
       );
 
-      if(this.rayHitBody){
-        let hitPoint = this.ray.GetPointOnRay(rayCastResult.mFraction);
-        this.bodyInterface.ActivateBody(this.rayHitBody.GetID());
-        this.rayHitBody.AddImpulse(this.ray.mDirection.Normalized().Mul(-10), hitPoint);
+      if (this.rayHitBody && this.rayResolve) {
+        this.rayResolve(Jolt.wrapPointer(this.rayHitBody, Jolt.Body));
+
+        this.rayResolve = undefined;
+
+        // Jolt.wrapPointer(
+        //   this.rayHitBody,
+        //   Jolt.Body
+        // ).AddImpulse(new Jolt.Vec3(0,100,0));
       }
 
       // Update the collector so that it won't receive any hits further away than this hit
@@ -67,15 +73,14 @@ export class Physics {
     };
 
     this.rayCollector.OnBody = (bodyPointer: number) => {
-      const body = Jolt.wrapPointer(bodyPointer, Jolt.Body);
-      
-      this.rayHitBody = body;
-      
+      this.rayHitBody = bodyPointer;
+
       console.log(bodyPointer);
     };
 
     this.rayCollector.Reset = () => {
       // Reset your bookkeeping, in any case we'll need to reset the early out fraction for the base class
+      this.rayHitBody = undefined;
       this.rayCollector.ResetEarlyOutFraction();
     };
   }
@@ -120,23 +125,33 @@ export class Physics {
   }
 
   castRay(origin: Vector3, direction: Vector3) {
-
     this.ray.mOrigin.Set(origin.x, origin.y, origin.z);
     this.ray.mDirection.Set(direction.x, direction.y, direction.z);
+
+    let closest_hit_collector = new Jolt.CastRayClosestHitCollisionCollector();
 
     this.physicsSystem
       .GetNarrowPhaseQuery()
       .CastRay(
         this.ray,
         this.raySettings,
-        this.rayCollector,
+        closest_hit_collector,
         this.rayBpFilter,
         this.rayObjectFilter,
         this.rayBodyFilter,
         this.rayShapeFilter
       );
 
-    this.rayCollector.Reset();
+    let body: initJolt.Body | undefined;
+    if (closest_hit_collector.HadHit()) {
+      body = this.physicsSystem
+        .GetBodyLockInterfaceNoLock()
+        .TryGetBody(closest_hit_collector.mHit.mBodyID);
+    }
+
+    Jolt.destroy(closest_hit_collector);
+
+    return body;
   }
 
   createBox(
