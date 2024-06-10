@@ -153,7 +153,7 @@ export const systems = [
 
   class PhysicsSystem extends System {
     readonly q = {
-      physicsObjects: world.with("node", "physics"),
+      physicsObjects: world.with("physics"),
     };
 
     constructor(app: App) {
@@ -173,10 +173,15 @@ export const systems = [
 
     update(_app: App, _dt: number): void {
       for (const po of this.q.physicsObjects) {
-        po.node.position.copy(Physics.wrapVec3(po.physics.body.GetPosition()));
-        po.node.quaternion.copy(
-          Physics.wrapQuat(po.physics.body.GetRotation())
-        );
+        if (po.node) {
+          po.node.position.copy(
+            Physics.wrapVec3(po.physics.body.GetPosition())
+          );
+
+          po.node.quaternion.copy(
+            Physics.wrapQuat(po.physics.body.GetRotation())
+          );
+        }
       }
     }
   },
