@@ -12,7 +12,7 @@
     "@types/node": "^20.12.12",
     "@types/three": "^0.163.0",
     "typescript": "^5.4.5",
-    "vite": "^5.2.11"
+    "vite": "^5.3.1"
   },
   "dependencies": {
     "game-inputs": "^0.8.0",
